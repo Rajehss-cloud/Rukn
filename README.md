@@ -1,44 +1,42 @@
 # Rukn — Al-Mahkama Study Corner
 
-Arabic/English static frontend with a real Supabase cloud backend for authentication, student profiles, enrollment requests, materials/PDF links, announcements, settings, and profile images.
+A bilingual Arabic/English static frontend connected to Supabase for authentication, profiles, enrollment, materials, announcements, social links, and profile images.
 
-## 1) Create and configure Supabase
+## Setup
 1. Create a Supabase project.
-2. In **Project Settings → API**, copy the Project URL and the `anon` / publishable key.
-3. Edit `js/supabase-config.js`, replacing `YOUR_SUPABASE_URL` and `YOUR_SUPABASE_ANON_KEY`.
-4. Open **SQL Editor**, paste all of `supabase-schema.sql`, and run it.
-5. Host this folder on HTTPS (Netlify, GitHub Pages, etc.) or run `python -m http.server 8000` locally.
-6. In Supabase **Authentication → URL Configuration**, set the site URL and add your deployed URL to Redirect URLs. Enable email/password sign-in and configure SMTP for production email delivery.
-7. Place your logo at `assets/logo.png`.
+2. In **Project Settings → API**, copy the Project URL and the public `anon`/publishable key.
+3. Put those two public values in `js/supabase-config.js`. Never put a `service_role` key in frontend code.
+4. Open Supabase **SQL Editor**, paste and run `supabase-schema.sql`.
+5. In **Authentication → URL Configuration**, set the deployed site URL and allowed redirect URLs. Enable email/password sign-in and configure SMTP for production.
+6. Host this folder on HTTPS (GitHub Pages, Netlify, etc.) or run `python -m http.server 8000` and open the local address.
+7. Place the logo at `assets/logo.png`.
 
-The browser uses the Supabase JS v2 CDN and project `anon` key. The anon key is designed for browser use only when RLS is correctly enabled. **Never place a service_role key in frontend files.**
-
-## 2) Bootstrap the first Super Admin
-- Register using the email that should own the site.
-- In Supabase **Authentication → Users**, copy that account's UUID.
-- In SQL Editor, run (replace the UUID):
+## Super Admin bootstrap
+1. Register on the site using `sherifeltahawy86@gmail.com` and the name `Abo Rajeh`.
+2. Confirm the email from Supabase.
+3. Run this SQL as the project owner in Supabase SQL Editor:
 
 ```sql
 update public.profiles
-set role = 'super_admin', enrollment_status = 'approved', access_code = 'RUKN-ROOT'
-where id = 'YOUR-AUTH-USER-UUID';
+set full_name = 'Abo Rajeh', role = 'super_admin', enrollment_status = 'approved', access_code = 'RUKN-ROOT'
+where lower(gmail) = lower('sherifeltahawy86@gmail.com');
 ```
 
-There is no hardcoded administrator email/password. Supabase Auth handles passwords and email confirmation. Promotion to/demotion from administrator and account deletion are available only to the initial Super Admin in the site interface; enrollment approval, banning, content management, announcements, and settings are managed through protected database policies/RPCs.
+No password is hardcoded or stored in the repository. Set/change your password through Supabase Auth.
 
-## 3) Features
-- `index.html`: bilingual landing page, live announcement popup/chime, cloud homepage text/social links.
-- `login.html`: Supabase email/password sign-up, login, and password recovery email.
-- `dashboard.html`: enrollment request, approval status, generated access code, and approved materials.
-- `profile.html`: cloud-saved name, avatar/banner uploads, and **My Subscriptions / اشتراكاتي**.
-- `summaries.html`, `exams.html`: approved-student-only materials and PDF links.
-- `admin.html`: user approvals/roles/ban/delete, PDF materials, announcement broadcaster, social links, editable English homepage copy.
-- `supabase-schema.sql`: tables, signup trigger, RPCs, RLS, Realtime publication, and profile-media storage policies.
+## Pages
+- `index.html`: home, published announcement toast/chime, editable site copy and social links.
+- `login.html`: email/password sign-up, login, and password recovery email.
+- `dashboard.html`: enrollment request, approval status, access code, and subscriptions.
+- `profile.html`: cloud-saved name, profile photo/banner, and **My Subscriptions / اشتراكاتي**.
+- `summaries.html` and `exams.html`: approved-student-only PDF links and timed MCQ sample.
+- `admin.html`: enrollment approvals, role management, ban/delete, materials, announcement, social and homepage settings.
+- `supabase-schema.sql`: database tables, policies, RPCs, Storage, Realtime publication.
 
-## Security and behavior notes
-- The schema restricts profile role/enrollment/access-code changes to server-side admin RPC/bootstrap SQL; students can only edit their own name, phone, and image URLs.
-- Materials are visible only to approved, non-banned students and administrators. Announcements/settings are public-readable; only admins can publish/edit.
-- Profile image storage is public-read and owner-write (profile pictures are intended to be visible); max upload is 5 MB.
-- Google Drive URLs may block embedding. Use a direct PDF URL or a Drive preview URL such as `https://drive.google.com/file/d/FILE_ID/preview`.
-- Browser audio may require an earlier user gesture; live chime is best-effort. Supabase Realtime only works after enabling the publication in the SQL script and with network access.
-- Access control is enforced by RLS, not merely by hiding UI. Keep database backups and configure email/SMTP and Auth rate limits before production.
+## Security and known constraints
+- RLS controls access server-side. The browser only uses the Supabase anon/publishable key; never expose `service_role`.
+- Supabase Auth manages passwords; no administrator password is in source files.
+- Files are linked by URL; profile images are uploaded to the `profile-media` Storage bucket. Google Drive may block downloads/embedding; use an accessible PDF URL or Drive `/preview` URL.
+- Browsers may require a user gesture before playing audio. Realtime sound is best effort.
+- Client-side quizzes are sample frontend questions; no quiz results are persisted.
+- This frontend should be tested in a Supabase project before production. Configure email, URL allowlists, backups, and access policies for your deployment.
